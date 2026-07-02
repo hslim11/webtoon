@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- 웹툰 저장소 랜딩 페이지 — 작품/회차 목록을 카드로 보여주고 뷰어로 연결 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>웹툰 라이브러리</title>
+<style>
+  :root { --page-bg: #0e0e10; --card-bg: #1c1c1e; --accent: #6FC7D6; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-bg); color: #f5f5f7;
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  }
+  header { text-align: center; padding: 48px 16px 24px; }
+  header h1 { font-size: 22px; letter-spacing: .02em; margin: 0; }
+  .grid {
+    max-width: 960px; margin: 0 auto; padding: 16px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;
+  }
+  .card {
+    background: var(--card-bg); border-radius: 10px; overflow: hidden;
+    text-decoration: none; color: inherit; display: block;
+    border: 1px solid #2a2a2e; transition: transform .15s ease;
+  }
+  .card:hover { transform: translateY(-4px); }
+  .card img { width: 100%; height: auto; display: block; }
+  .card .meta { padding: 12px 14px 16px; }
+  .card .meta b { font-size: 15px; }
+  .card .meta span { display: block; margin-top: 4px; font-size: 12px; color: var(--accent); }
+  footer { text-align: center; color: #9a9aa2; font-size: 12px; padding: 24px 12px 48px; }
+</style>
+</head>
+<body>
+<header><h1>웹툰 라이브러리</h1></header>
+<div class="grid">
+  <a class="card" href="./최약체의 귀환/EP01/index.html">
+    <img src="./최약체의 귀환/EP01/cover.png" alt="최약체의 귀환 표지" />
+    <div class="meta"><b>최약체의 귀환</b><span>시즌1 · EP01</span></div>
+  </a>
+</div>
+<footer>Claude Code 웹툰 제작 파이프라인으로 생성</footer>
+</body>
+</html>
