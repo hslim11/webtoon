@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<!-- EP05 「최약체의 귀환」 세로 스크롤 웹툰 뷰어 — 말풍선·대사 in-image 베이크(오버레이 없음), 패널 62장 순서 배치 + 리듬 간격(중간점 반전·DRIFT 확립·3단 붕괴) -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>최약체의 귀환 — ep05</title>
+<!--
+  세로 스크롤 웹툰 뷰어 (단일 HTML, 외부 의존성 없음)
+  - 말풍선·한글 대사는 각 패널 PNG에 이미 베이크됨(in-image) → 텍스트 오버레이 없음.
+  - PANELS 데이터 배열이 유일한 편집 지점: { src, alt, gap }.
+      gap = 이 패널 '다음'의 이음새(px). 0=무봉제 연속 컷, 클수록 장면 전환/침묵/임팩트 체류.
+  - 패널은 원본 비율(width:100%; height:auto)로 온전히 배치 → 베이크 말풍선 잘림 없음.
+  - EP01~EP04 뷰어와 동일 구조·기술 스택(단일 HTML). RELEASE 패키징 시 패널을 동봉 panels/로 복사하고 src를 panels/ 상대참조로 치환 → 외부 의존성 없이 완전 self-contained.
+-->
+<style>
+  :root {
+    --max-w: 720px;          /* 모바일 우선 기준 폭(데스크톱은 중앙 정렬) */
+    --page-bg: #0e0e10;      /* 뷰어 바깥 배경 */
+    --strip-bg: #000000;     /* 패널 스트립 배경(암전 컷과 이어지도록 검정) */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page-bg);
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    color: #111;
+    -webkit-text-size-adjust: 100%;
+  }
+  header.viewer-head {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(14,14,16,.92);
+    color: #f5f5f7; text-align: center;
+    padding: 10px 12px; font-size: 14px; letter-spacing: .02em;
+    backdrop-filter: blur(6px);
+  }
+  header.viewer-head b { font-weight: 700; }
+  .strip {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    background: var(--strip-bg);
+    display: flex; flex-direction: column;
+    gap: 0; /* 이음새는 패널별 margin-bottom(gap)으로 제어 */
+  }
+  .panel { position: relative; line-height: 0; }
+  .panel img {
+    width: 100%; height: auto; display: block;
+    background: #1c1c1e; /* 이미지 로드 전/결손 시에도 칸 형태 유지(암부 톤) */
+  }
+  .panel .missing {
+    line-height: 1.5; color: #b00020; background: #fff3f3;
+    border: 2px dashed #b00020; text-align: center;
+    padding: 48px 12px; font-size: 14px;
+  }
+  footer.viewer-foot {
+    color:#9a9aa2; text-align:center; padding:28px 12px 60px;
+    font-size:13px; max-width: var(--max-w); margin:0 auto;
+  }
+</style>
+</head>
+<body>
+<header class="viewer-head"><b id="m-title">최약체의 귀환</b> · <span id="m-ep">ep05</span></header>
+<main class="strip" id="strip" aria-label="webtoon vertical viewer"></main>
+<footer class="viewer-foot" id="foot"></footer>
+
+<script>
+/* ===== META ===== */
+const META = { title: "최약체의 귀환", episode: "ep05" };
+
+/* ===== PANELS 데이터 (episode-compositor) =====
+   src = 이 파일 기준 상대경로. bubbles 없음(말풍선은 이미지에 베이크됨).
+   gap = 다음 패널과의 이음새(px):
+     0   무봉제 연속 컷(같은 순간/동작·인과 연속)
+     12  긴장 조이기(클리프행어 조임·액션 급박·build)
+     16  붕괴 구간 촘촘한 조임(불안정 변주 — dutch angle 하강)
+     24  일반 비트 전환
+     36  붕괴 구간 어긋난 여백(불안정 변주 — 정적·침묵 체류)
+     48  임팩트/소모 격리(FX_BURN·FX_DRIFT 절정·준정점 세로컷 체류·핵심 붕괴 대사 체류)
+     64  full-bleed 정점 앞뒤 충격 격리 · sub-state 전환(P40/P41) 중간 여백 · 광기 도화선
+     200 클리프행어 암전 체류(회차 끝 · 풀블랙 여운)
+   근거: ep05_shotlist.md — SC01 단일 씬(전 62패널 LOC_GATE_INTERIOR variant D)·SCENE BREAK 0개(하드 120 미사용).
+         · sub-state 경계 P40→P41(aftermath-trap→reactivation, 코어 재활성)에 중간 여백(64)
+         · full-bleed 3회 P33(💠 DRIFT 첫 확정)·P41(코어 재활성)·P62(클리프행어 암전)에 스크롤 체류 집중(앞뒤 64/64/200 격리)
+         · "이미 봤어" 3단 붕괴 — P30(자신감 정점·안정 구도 기준선) 이후 P34(첫 균열·dutch 도입)부터 리듬 불안정화(16/36 변주)
+         · 불통 확정 P45(회차 핵심·48 체류) 이후 긴장 유지 · 💠 FX_DRIFT 6컷(P27·31·33·37·46·52)·🔴 FX_BURN 이중 앵글(P20 측면·P47 정면·앞뒤 48 격리)
+         · 🔴 클리프행어 조임 P56~61(12) · P62 full-bleed ECU→풀블랙 암전(200 하단 여운)
+   검증: ep05_validation.md 62/62 ACCEPT · 결번/0바이트/md5중복 0 · ACCEPT-FLAG 0건. */
+const PANELS = [
+  /* ── SC01 LOC_GATE_INTERIOR(variant D · aftermath-trap) · 콜드오픈 훅 (P1~P15) / 긴장 8 · EP04 P60 블랙컷 직결·리셋 없음 ── */
+  { src: "panels/panel_001.png", alt: "panel 001 · 와이드 establishing 팀원 일제 쇄도(EP04 P60 직결·리셋 없음)·FX_VOID 구석 먹칠·SFX '촤아악—'(무대사)", gap: 24 },
+  { src: "panels/panel_002.png", alt: "panel 002 · 도현 눈 ECU 안정 정면 속말('…이 장면은, 봤어.'·정보 우위 시그니처)",                       gap: 24 },
+  { src: "panels/panel_003.png", alt: "panel 003 · 한소이 등장①·청록 로브·문양 흐림('도현 씨…! 이 사람들, 왜 이래요?')",                gap: 24 },
+  { src: "panels/panel_004.png", alt: "panel 004 · 도현 대피 지시('내 뒤로. 셋 세면, 왼쪽 통로로 뛰어.'·미래 지식 운용)",                 gap: 12 },  /* 지시 → 첫 합 액션 급박 */
+  { src: "panels/panel_005.png", alt: "panel 005 · 팀원 첫 합 달려듦 insert·도현 몸틈·SFX '파앗—'(무대사)",                                gap: 0 },   /* 몸틈 → 흘림 무봉제 */
+  { src: "panels/panel_006.png", alt: "panel 006 · 계산된 회피·팀원 신음('큭—!'·무쌍 아님·운용)",                                          gap: 24 },
+  { src: "panels/panel_007.png", alt: "panel 007 · 와이드 한소이 이탈↔도현 잔류('지금.'·2인극 좁힘·한소이 이후 미등장)",                   gap: 24 },
+  { src: "panels/panel_008.png", alt: "panel 008 · 도현 눈 ECU 안정 속말('네가 어디로 도망칠지도… 봤어.'·EP04 P44 자신감 계승)",           gap: 24 },
+  { src: "panels/panel_009.png", alt: "panel 009 · 최봉규 단독 제거 지시 외침('뭘 봐. …저놈부터 찢어.'·bonggyu_ref)",                     gap: 24 },
+  { src: "panels/panel_010.png", alt: "panel 010 · 공존 컷①·투샷 정면 대비(도현 마름·창백↔최봉규 우람·붉은기)·도현 유인('…와. 이쪽으로.'·명령형)", gap: 24 },
+  { src: "panels/panel_011.png", alt: "panel 011 · 최봉규 단독 하대('제 발로 기어들어와? / 쭉정이가 겁을 상실했나.'·회귀 미간파·재렌더 해소)", gap: 24 },
+  { src: "panels/panel_012.png", alt: "panel 012 · 와이드 함정 유인 추격·FX_MANA 잔광·SFX '저벅, 저벅—'(무대사)",                        gap: 24 },
+  { src: "panels/panel_013.png", alt: "panel 013 · 도현 예지 속말('세 걸음 뒤, 저 기둥이 무너진다. …네가 거기 설 거야.'·계산 시그니처)",       gap: 24 },
+  { src: "panels/panel_014.png", alt: "panel 014 · 최봉규 예지 지점 진입('어디까지 도망가나 보자, 이 새끼.'·함정 성립 직전)",                gap: 12 },  /* 진입 → 발동 신호 build */
+  { src: "panels/panel_015.png", alt: "panel 015 · 도현 눈 ECU 발동 신호 속말('…지금.')",                                                  gap: 0 },   /* 신호 → 발동 무봉제 */
+  /* ── SC01(계속 · aftermath-trap) · 함정 발동·역이용 성공 소형 사이다 (P16~P32) / 긴장 8→7→8 · 카메라 안정(통제감 축적) ── */
+  { src: "panels/panel_016.png", alt: "panel 016 · 지지대 타격·SFX '콰—'(무대사·운용·재각성 이펙트 없음)",                                 gap: 0 },   /* 타격 → 붕괴 인과 무봉제 */
+  { src: "panels/panel_017.png", alt: "panel 017 · 와이드 천장 붕괴 퇴로 차단·팀원 외침('으악!')",                                          gap: 24 },
+  { src: "panels/panel_018.png", alt: "panel 018 · 최봉규 고립·당황('뭐야 이거—! / 이 새끼가…')",                                          gap: 24 },
+  { src: "panels/panel_019.png", alt: "panel 019 · 세로컷 도현 잔해 위 위압(소형 사이다·FX_CATHARSIS 서늘한 강청 림라이트·무대사)",          gap: 48 },  /* 준정점 세로컷 체류 + FX_BURN 앞 격리 */
+  { src: "panels/panel_020.png", alt: "panel 020 · 💠 FX_BURN 측면·오른관자놀이 그을림 insert('…작게, 태웠어.'·F-04 소모·단정형 유지)",       gap: 48 },  /* FX_BURN 소모 뒤 격리 */
+  { src: "panels/panel_021.png", alt: "panel 021 · 최봉규 단독 의심('이게… / 처음부터 계산된 거였어?'·속임수 씨앗·회귀 간파 아님)",           gap: 24 },
+  { src: "panels/panel_022.png", alt: "panel 022 · 공존 컷②·도현 겨눔↔최봉규('여기서 끝이야. / 넌 이제, 도망칠 데가 없어.'·단정형 우위)",     gap: 24 },
+  { src: "panels/panel_023.png", alt: "panel 023 · 최봉규 단독 공포('…어떻게 이걸, 다…')",                                                  gap: 24 },
+  { src: "panels/panel_024.png", alt: "panel 024 · 도현 눈 ECU 안정 속말('다 봤으니까. 네 다음 수까지.'·통제감 정점 예열)",                   gap: 24 },
+  { src: "panels/panel_025.png", alt: "panel 025 · 최봉규 통신 단말 더듬음('지, 지원… / 지원 요청—'·육성·다급)",                            gap: 24 },
+  { src: "panels/panel_026.png", alt: "panel 026 · 도현 예지 선언('소용없어. 3초 뒤, 넌 그걸 놓쳐.'·계산 시그니처·안정 구도)",                gap: 24 },
+  { src: "panels/panel_027.png", alt: "panel 027 · 💠 FX_DRIFT 도입 insert·무릎 꿇는 최봉규 원본 반투명 잔상 vs 실제(복선·먹칠 아님·무대사)",   gap: 24 },
+  { src: "panels/panel_028.png", alt: "panel 028 · 도현 속말('무릎 꿇고, 목숨을 빌겠지. …원래, 그래.'·곧 어긋날 확신의 아이러니)",           gap: 24 },
+  { src: "panels/panel_029.png", alt: "panel 029 · 최봉규 손 단말 위 떨림·오인 유도(무대사)",                                                gap: 24 },
+  { src: "panels/panel_030.png", alt: "panel 030 · ★낙차①단 자신감 정점·최대 안정 정면 대칭 구도('…봤어. 넌 여기서 무너져.'·EP04 P44 재현·기준선)", gap: 48 }, /* 자신감 정점 체류 + 미세 균열 앞 격리 */
+  { src: "panels/panel_031.png", alt: "panel 031 · 💠 FX_DRIFT 미세 흔들림 insert·반투명 자아 잔상(균열 씨앗·무대사)",                         gap: 24 },
+  { src: "panels/panel_032.png", alt: "panel 032 · 최봉규 단독 공포→광기 전환('…무너져? 내가?'·어긋남 도화선)",                             gap: 64 },  /* 광기 도화선 → full-bleed 첫 확정 앞 격리 */
+  /* ── SC01(계속) · 반전 RULE-DRIFT 확립·정보 우위 부식 (P33~P55) / 긴장 8→9.5 ★중간점 반전 · dutch angle 붕괴 ── */
+  { src: "panels/panel_033.png", alt: "panel 033 · ★full-bleed 💠 DRIFT 첫 확정·무릎 꿇는 잔상 vs 저항하는 실제 어긋남·발악 외침('빌어? 내가 왜!')", gap: 64 }, /* ★ full-bleed 정점 · 충격 체류 */
+  { src: "panels/panel_034.png", alt: "panel 034 · ★낙차②단 첫 균열·dutch angle 도입·속말('…어?'·톤 떨림)",                                gap: 36 },  /* 붕괴 리듬 불안정화 시작 */
+  { src: "panels/panel_035.png", alt: "panel 035 · 최봉규 잔해로 질주 발악 외침('네놈 그 눈… / 다 안다는 그 눈이 마음에 안 들어!'·속임수 프레임)", gap: 16 },
+  { src: "panels/panel_036.png", alt: "panel 036 · 도현 정보 불일치 자각·dutch 증가·속말('…이게 아냐. / 이 다음은, 이게—'·EP04 P57 계승)",     gap: 36 },
+  { src: "panels/panel_037.png", alt: "panel 037 · 💠 FX_DRIFT 잔상 붕괴 insert·반투명 파편으로 부서짐(먹칠 아님·무대사)",                     gap: 16 },
+  { src: "panels/panel_038.png", alt: "panel 038 · 최봉규 죽은 코어 붙잡음('이거… / 아직 안 죽었지?'·FX_MANA 재활성 조짐)",                   gap: 36 },
+  { src: "panels/panel_039.png", alt: "panel 039 · 도현 처음 굳음·dutch·속말('저 개체는… 내가 봤을 땐, 죽어 있었어.'·부식 자각)",              gap: 16 },
+  { src: "panels/panel_040.png", alt: "panel 040 · 도현 눈 균열 ECU·dutch·정보 우위 첫 균열(무대사)",                                       gap: 64 },  /* ★ sub-state 경계 + full-bleed 재활성 앞 격리 */
+  { src: "panels/panel_041.png", alt: "panel 041 · ★full-bleed·코어 재활성(sub-state reactivation 진입·FX_MANA 폭발·DRIFT 결과 발현)·SFX '쿠구구—!'", gap: 64 }, /* ★ full-bleed 정점 · 충격 격리 */
+  { src: "panels/panel_042.png", alt: "panel 042 · 최봉규 단독 광기 웃음('네가 다 안다는 눈을 해서… 반대로 가봤다! / 어때, 이건 봤냐?!'·회귀 미간파)", gap: 24 },
+  { src: "panels/panel_043.png", alt: "panel 043 · 공존 컷③·도현 붕괴 침묵('……')↔최봉규 광기·dutch 심화",                                  gap: 36 },  /* 붕괴 침묵 체류 */
+  { src: "panels/panel_044.png", alt: "panel 044 · 와이드 재활성 몬스터 도현 쪽 선회·안전지대→사지 역전(무대사)",                            gap: 24 },
+  { src: "panels/panel_045.png", alt: "panel 045 · ★낙차③단 불통 확정·회차 핵심·dutch 강화·속말('왜… 안 맞아. / 분명, 봤는데.'·EP04 P44 정면 대비)", gap: 48 }, /* 핵심 붕괴 대사 체류 + FX_DRIFT 절정 앞 */
+  { src: "panels/panel_046.png", alt: "panel 046 · 세로컷 💠 FX_DRIFT 부식 절정·대량 반투명 파편 흩어짐(먹칠 아님·무대사)",                    gap: 48 },  /* 절정 세로컷 체류 + FX_BURN 앞 격리 */
+  { src: "panels/panel_047.png", alt: "panel 047 · 🔴 FX_BURN 정면·오른관자놀이·붕괴톤('…내가 태워서, 어긋난 건가.'·DRIFT 원인=개입 부식·최봉규 간파 아님)", gap: 48 }, /* FX_BURN 뒤 격리 */
+  { src: "panels/panel_048.png", alt: "panel 048 · 최봉규 단독 조롱('그 잘난 눈, 이제 안 통하나 보지?'·주도권 역전)",                        gap: 24 },
+  { src: "panels/panel_049.png", alt: "panel 049 · 도현 처음 뒷걸음·high angle 위축(무대사·통제감 붕괴 가시화)",                              gap: 24 },
+  { src: "panels/panel_050.png", alt: "panel 050 · 와이드 몬스터↔최봉규 협공 궁지·dutch 압박·FX_MANA(무대사)",                               gap: 24 },
+  { src: "panels/panel_051.png", alt: "panel 051 · 도현 정보 의존 반사·dutch·속말('다음은… 다음은 뭐가—'·통제 집착 결함 발동)",                gap: 36 },
+  { src: "panels/panel_052.png", alt: "panel 052 · 💠 FX_DRIFT 잔상 부재 insert·안 맺히는 반투명 안개(신뢰 불가·먹칠 빈구멍 아님·무대사)",        gap: 24 },
+  { src: "panels/panel_053.png", alt: "panel 053 · 🔴 부식 자각 핵심·dutch 강화·속말('…안 보여. / 아니, 봐도… 못 믿어.'·중간점 반전 심리 핵심)", gap: 24 },
+  { src: "panels/panel_054.png", alt: "panel 054 · 최봉규 잔해 투척↔도현 반사 회피 외침('이제 못 피하지! 어?!'·계산 우위 소멸)",                gap: 24 },
+  { src: "panels/panel_055.png", alt: "panel 055 · ★붕괴 착지·dutch 최대·붕괴톤 겉대사('…이게, 안 맞는다고?'·통제감 붕괴 착지)",                gap: 48 },  /* 붕괴 착지 체류 → 클리프 진입 격리 */
+  /* ── SC01(계속 · reactivation) · 클리프행어 역으로 궁지 (P56~P62) / 긴장 9.5→10 🔴 · 위계 역전 카메라 ── */
+  { src: "panels/panel_056.png", alt: "panel 056 · 공존 컷④·최봉규 low angle 몰아붙임↔도현 벽('네가 뭘 안다고 지껄이든… / 지금은 내가 위야.'·위계 역전)", gap: 12 }, /* 클리프행어 조임 */
+  { src: "panels/panel_057.png", alt: "panel 057 · 도현 high angle 위축·벽 궁지(무대사·통제감 붕괴)",                                       gap: 12 },
+  { src: "panels/panel_058.png", alt: "panel 058 · 공존 컷⑤·최봉규 조롱↔도현('네 그 '봤다'는 소리… / 이제 안 나오네?'·재활성 몬스터 배경·'봤다' 무력화)", gap: 12 },
+  { src: "panels/panel_059.png", alt: "panel 059 · 도현 눈 ECU 위축·속말('…처음이야. / 미래가, 나를 배신한 게.'·DRIFT 확립 심리 착지)",         gap: 12 },
+  { src: "panels/panel_060.png", alt: "panel 060 · 와이드 몬스터 강습+최봉규 협공·FX_VOID 구석 먹칠(VOID≠DRIFT)·SFX '콰아앙—'(무대사)",         gap: 12 },
+  { src: "panels/panel_061.png", alt: "panel 061 · 도현 손 뻗음 예지 부재·dutch·속말('이 다음을… 난—'·말 끊김·EP04 P57 파국적 회수)",           gap: 12 },
+  { src: "panels/panel_062.png", alt: "panel 062 · ★full-bleed 🔴 도현 눈 ECU→풀블랙 암전·붕괴톤('…안 봤는데.'·EP04 P57 대구·클리프행어 긴장 10)", gap: 200 } /* ★ full-bleed 정점 · 회차 끝 블랙컷 여운 */
+];
+
+/* ===== 렌더러 ===== */
+function el(tag, cls, txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+function renderPanel(p, i){
+  const panel = el("div", "panel");
+  if (p.gap) panel.style.marginBottom = p.gap + "px"; // 이음새(리듬)
+  const img = new Image();
+  img.loading = "lazy";              // 긴 회차 성능을 위한 지연 로드
+  img.decoding = "async";
+  img.alt = p.alt || ("panel " + String(i+1).padStart(3,"0"));
+  img.src = p.src;
+  img.onerror = () => {              // 결손/0바이트 PNG는 칸을 비우지 않고 표시
+    const ph = el("div", "missing", "⚠ 패널 이미지 누락/손상: " + p.src);
+    img.replaceWith(ph);
+  };
+  panel.appendChild(img);
+  return panel;
+}
+
+(function init(){
+  document.title = META.title + " — " + META.episode;
+  document.getElementById("m-title").textContent = META.title;
+  document.getElementById("m-ep").textContent = META.episode;
+  const strip = document.getElementById("strip");
+  PANELS.forEach((p,i) => strip.appendChild(renderPanel(p,i)));
+  document.getElementById("foot").textContent =
+    "총 " + PANELS.length + " 패널 · 「최약체의 귀환」 ep05 · 끝까지 스크롤하세요";
+})();
+</script>
+</body>
+</html>

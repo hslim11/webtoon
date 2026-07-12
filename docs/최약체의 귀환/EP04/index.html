@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<!-- EP04 「최약체의 귀환」 세로 스크롤 웹툰 뷰어 — 말풍선·대사 in-image 베이크(오버레이 없음), 패널 60장 순서 배치 + 리듬 간격 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>최약체의 귀환 — ep04</title>
+<!--
+  세로 스크롤 웹툰 뷰어 (단일 HTML, 외부 의존성 없음)
+  - 말풍선·한글 대사는 각 패널 PNG에 이미 베이크됨(in-image) → 텍스트 오버레이 없음.
+  - PANELS 데이터 배열이 유일한 편집 지점: { src, alt, gap }.
+      gap = 이 패널 '다음'의 이음새(px). 0=무봉제 연속 컷, 클수록 장면 전환/침묵/임팩트 체류.
+  - 패널은 원본 비율(width:100%; height:auto)로 온전히 배치 → 베이크 말풍선 잘림 없음.
+  - EP01~EP03 RELEASE 뷰어와 동일 구조·기술 스택(단일 HTML+동봉 panels/ 상대참조 → 그대로 열림).
+-->
+<style>
+  :root {
+    --max-w: 720px;          /* 모바일 우선 기준 폭(데스크톱은 중앙 정렬) */
+    --page-bg: #0e0e10;      /* 뷰어 바깥 배경 */
+    --strip-bg: #000000;     /* 패널 스트립 배경(암전 컷과 이어지도록 검정) */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page-bg);
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    color: #111;
+    -webkit-text-size-adjust: 100%;
+  }
+  header.viewer-head {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(14,14,16,.92);
+    color: #f5f5f7; text-align: center;
+    padding: 10px 12px; font-size: 14px; letter-spacing: .02em;
+    backdrop-filter: blur(6px);
+  }
+  header.viewer-head b { font-weight: 700; }
+  .strip {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    background: var(--strip-bg);
+    display: flex; flex-direction: column;
+    gap: 0; /* 이음새는 패널별 margin-bottom(gap)으로 제어 */
+  }
+  .panel { position: relative; line-height: 0; }
+  .panel img {
+    width: 100%; height: auto; display: block;
+    background: #1c1c1e; /* 이미지 로드 전/결손 시에도 칸 형태 유지(암부 톤) */
+  }
+  .panel .missing {
+    line-height: 1.5; color: #b00020; background: #fff3f3;
+    border: 2px dashed #b00020; text-align: center;
+    padding: 48px 12px; font-size: 14px;
+  }
+  footer.viewer-foot {
+    color:#9a9aa2; text-align:center; padding:28px 12px 60px;
+    font-size:13px; max-width: var(--max-w); margin:0 auto;
+  }
+</style>
+</head>
+<body>
+<header class="viewer-head"><b id="m-title">최약체의 귀환</b> · <span id="m-ep">ep04</span></header>
+<main class="strip" id="strip" aria-label="webtoon vertical viewer"></main>
+<footer class="viewer-foot" id="foot"></footer>
+
+<script>
+/* ===== META ===== */
+const META = { title: "최약체의 귀환", episode: "ep04" };
+
+/* ===== PANELS 데이터 (episode-compositor) =====
+   src = 이 파일 기준 상대경로. bubbles 없음(말풍선은 이미지에 베이크됨).
+   gap = 다음 패널과의 이음새(px):
+     0   무봉제 연속 컷(같은 순간/동작·시선 연속)
+     12  긴장 조이기(클리프행어 조임·액션 급박)
+     24  일반 비트 전환
+     48  FX_BURN 정점 앞뒤 약간의 여백(임팩트 강조)
+     64  침묵 박자·정점 체류·full-bleed 앞뒤 격리·세로컷 준정점
+     120 장면 전환(하드 SCENE BREAK)
+     200 클리프행어 암전 체류(회차 끝 · 풀블랙 여운)
+   근거: ep04_shotlist.md 하드 SCENE BREAK 1개(P5/P6 뒤, LOC_GATE_ENTRANCE→LOC_GATE_INTERIOR) · scene_id 2개(SC01·SC02)
+         · full-bleed 3회(P15 전투 개시·P37 사이다 타격·P60 클리프행어)로 세 정점에 스크롤 체류 집중
+         · 💠 FX_BURN 정면 P35·측면 P47(앞뒤 48 여백) · 사이다 절정 P36→P37(도약 0 무봉제→타격 후 64 격리) · P40 세로컷 준정점(64)
+         · 🔴 클리프행어 조임 P51~59(12) · P60 full-bleed ECU→풀블랙 암전(200 하단 여운) */
+const PANELS = [
+  /* ── SC01 LOC_GATE_ENTRANCE(야간) · 게이트 진입 직전 (P1~P5) / 긴장 6→8 · EP03 P57 블랙컷 직결 ── */
+  { src: "panels/panel_001.png", alt: "panel 001 · 게이트 입구 야간 두 뒷모습 WS(무대사·FX_VOID 옅게·톤 리셋)", gap: 64 },  /* 침묵 박자 호흡 */
+  { src: "panels/panel_002.png", alt: "panel 002 · 도현 눈 ECU('최봉규와 같은 게이트' 냉각 속말)",            gap: 24 },
+  { src: "panels/panel_003.png", alt: "panel 003 · 한소이 불안한 온기('무섭네요', 2풍선)",                     gap: 24 },
+  { src: "panels/panel_004.png", alt: "panel 004 · 도현 지시 투샷('내가 아는 길로만 움직여', 운용)",            gap: 24 },
+  { src: "panels/panel_005.png", alt: "panel 005 · 도현 속말('어디서 무너질지 봤어', 미래 지식 운용)",         gap: 120 }, /* 하드 SCENE BREAK → SC02(입구 외부→게이트 내부) */
+  /* ── SC02 LOC_GATE_INTERIOR(variant D · approach) · 진입·최봉규 첫 대면 (P6~P14) ── */
+  { src: "panels/panel_006.png", alt: "panel 006 · 게이트 내부 진입 WS establishing(무대사·SFX·비유클리드 왜곡)", gap: 24 },
+  { src: "panels/panel_007.png", alt: "panel 007 · 원경 최봉규 팀 실루엣 확인('…최봉규', 2풍선·혼동 분리 유지)",  gap: 24 },
+  { src: "panels/panel_008.png", alt: "panel 008 · 최봉규 첫 대면 하대('이 쭉정이들은', 외침) [공존 컷 ①]",      gap: 24 },
+  { src: "panels/panel_009.png", alt: "panel 009 · 투샷 정면 대비·도현 무응답('……') [공존 컷 ②·최고 혼동 위험]", gap: 24 },
+  { src: "panels/panel_010.png", alt: "panel 010 · 최봉규 훑음·못 알아봄('방해되면 밟는다') [공존 컷 ③]",       gap: 24 },
+  { src: "panels/panel_011.png", alt: "panel 011 · 도현 속말('곧 네 본색이 나온다', 미래 지식)",                gap: 24 },
+  { src: "panels/panel_012.png", alt: "panel 012 · 대형 개체 조짐·경보광('등급 오류 아냐?')",                    gap: 24 },
+  { src: "panels/panel_013.png", alt: "panel 013 · 방패 전조 명령 WS('쭉정이들 앞에 서', 외침 2풍선)",           gap: 24 },
+  { src: "panels/panel_014.png", alt: "panel 014 · 도현 눈 ECU('…시작이군', 상승 진입 예열)",                    gap: 64 },  /* 몬스터 출현 full-bleed 앞 여백 */
+  /* ── SC02(계속 · sub-state battle) · 전투 개시·상황 악화 (P15~P32) / 긴장 8→9 ── */
+  { src: "panels/panel_015.png", alt: "panel 015 · 대형 몬스터 출현 full-bleed(9:16, low angle·무대사 '쿵')",     gap: 64 },  /* ★ full-bleed 정점 · 충격 체류 */
+  { src: "panels/panel_016.png", alt: "panel 016 · 최봉규 고압 지휘('막아, 이 새끼들아!', 외침)",                 gap: 12 },  /* 액션 조임 */
+  { src: "panels/panel_017.png", alt: "panel 017 · 몬스터 팀 라인 밀어냄('밀립니다!', 외침·역부족)",              gap: 24 },
+  { src: "panels/panel_018.png", alt: "panel 018 · 한소이 이타심('다친 사람 이쪽으로', 문양 흐림 비강조)",         gap: 24 },
+  { src: "panels/panel_019.png", alt: "panel 019 · 도현 속말('저 녀석이 도망친다', 미래 지식 예측)",               gap: 24 },
+  { src: "panels/panel_020.png", alt: "panel 020 · 반쯤 포위 WS 부감(무대사·위기 고조)",                          gap: 24 },
+  { src: "panels/panel_021.png", alt: "panel 021 · 최봉규 두려움·식은땀('등급 오류야', 비웃음 무너짐)",            gap: 24 },
+  { src: "panels/panel_022.png", alt: "panel 022 · 뒷걸음·거짓 지원 요청('시간 좀 끌어')",                        gap: 24 },
+  { src: "panels/panel_023.png", alt: "panel 023 · 도현 속말('지원 같은 건 부르지 않아', 거짓 간파)",              gap: 24 },
+  { src: "panels/panel_024.png", alt: "panel 024 · 통신 단말 드는 척(통신 사각 풍선, F-09 정식 심기)",             gap: 24 },
+  { src: "panels/panel_025.png", alt: "panel 025 · 도현 눈→단말('저게 네 목줄이야', 속말 2풍선·F-09 강화)",        gap: 24 },
+  { src: "panels/panel_026.png", alt: "panel 026 · 몬스터 팀원 덮침('끄아악!', 외침·위기 정점)",                   gap: 12 },  /* 급박 조임 */
+  { src: "panels/panel_027.png", alt: "panel 027 · 최봉규 등 돌림 도주('쓸모없으면 버려지는 거야', 2풍선)",        gap: 24 },
+  { src: "panels/panel_028.png", alt: "panel 028 · 한소이 충격('우릴 두고 가는 거예요?!', 물음표·떨림)",           gap: 24 },
+  { src: "panels/panel_029.png", alt: "panel 029 · 몬스터 한소이 쪽 선회(무대사·need 축 점화·발동 아님)",          gap: 12 },  /* 위기 조임 */
+  { src: "panels/panel_030.png", alt: "panel 030 · 최봉규 냉소 도주 확정('잘 가라, 쭉정이들', 2풍선)",             gap: 24 },
+  { src: "panels/panel_031.png", alt: "panel 031 · 도현 개입 결단('…여기서 태운다', 시선 한소이→최봉규 등)",       gap: 0 },   /* 시선 P31→P32 무봉제 */
+  { src: "panels/panel_032.png", alt: "panel 032 · 도현 눈 ECU('그 등, 잘 기억해 둬', 반전 직전 침묵 예열)",       gap: 64 },  /* 반전 진입 앞 여백 체류 */
+  /* ── SC02(계속) · 규칙 예외 시연 사이다 (P33~P50) / 긴장 9→8 · 💠 예외 등급 시연 ── */
+  { src: "panels/panel_033.png", alt: "panel 033 · 💠 무표정→전투 자세 전환(무대사·각성 아님·운용)",              gap: 24 },
+  { src: "panels/panel_034.png", alt: "panel 034 · 도현 계산('3초 뒤 저 관절이 열린다', 속말 2풍선·예지)",         gap: 48 },  /* FX_BURN 정면 앞 여백 */
+  { src: "panels/panel_035.png", alt: "panel 035 · 💠 FX_BURN 정면 ECU('…태운다', 오른관자놀이 좌우 명확·개시)",   gap: 48 },  /* FX_BURN 뒤 여백 */
+  { src: "panels/panel_036.png", alt: "panel 036 · 예외 등급 도약 WS(무대사·FX_CATHARSIS 서늘한 백색·첫 전면 운용)", gap: 0 },   /* 도약→타격 무봉제 */
+  { src: "panels/panel_037.png", alt: "panel 037 · 일격 관절 절단 full-bleed(9:16, 무대사·사이다 타격 정점 '콰직')", gap: 64 },  /* ★ full-bleed 정점 · 충격 격리 */
+  { src: "panels/panel_038.png", alt: "panel 038 · 대형 몬스터 무너짐 WS('한 방에?!', 외침·경악)",                 gap: 24 },
+  { src: "panels/panel_039.png", alt: "panel 039 · 한소이 목격('도현 씨가 저걸?', 물음표·경악)",                   gap: 24 },
+  { src: "panels/panel_040.png", alt: "panel 040 · 💠 잔해 밟고 선 위압 세로컷(2:3, 무대사·FX_CATHARSIS·aftermath 진입)", gap: 64 }, /* 준정점 체류 */
+  { src: "panels/panel_041.png", alt: "panel 041 · 원경 최봉규/전경 도현 분리 WS('방금 그게 뭐야', 2풍선) [공존 컷 ④]", gap: 24 },
+  { src: "panels/panel_042.png", alt: "panel 042 · 최봉규 단독 경악('E급이 어떻게 저걸?!', 외침·못 알아봄)",       gap: 24 },
+  { src: "panels/panel_043.png", alt: "panel 043 · 냉정한 대치('정보만 있으면 불가능은 없어', 단정형 2풍선) [공존 컷 ⑤]", gap: 24 },
+  { src: "panels/panel_044.png", alt: "panel 044 · 미래 지식 못박기('네가 무너질지 이미 봤어', 2풍선) [공존 컷 ⑥]",  gap: 24 },
+  { src: "panels/panel_045.png", alt: "panel 045 · 최봉규 단독 공포('너… 뭐하는 놈이야?!', 외침·회귀 간파 아님)",   gap: 24 },
+  { src: "panels/panel_046.png", alt: "panel 046 · 한소이 수습·짧은 온기('다들 살았어', 저채도·문양 흐림)",        gap: 48 },  /* FX_BURN 측면 앞 여백 */
+  { src: "panels/panel_047.png", alt: "panel 047 · 💠 FX_BURN 측면 ECU('…큰 걸, 태웠어', 좌우 명확·큰 발동·단정형 붕괴)", gap: 48 }, /* FX_BURN 뒤 여백 */
+  { src: "panels/panel_048.png", alt: "panel 048 · 도현 휘청·위화감('뭘 알고 있었더라', 속말·FX_VOID 소량)",       gap: 48 },  /* 소모 대가 체류 */
+  { src: "panels/panel_049.png", alt: "panel 049 · 단말 줍는 손 insert('보고 지연 기록', 속말·F-09 확보)",         gap: 0 },   /* 단말 P49→P50 무봉제 */
+  { src: "panels/panel_050.png", alt: "panel 050 · 단말 챙김 냉정 회복('네 목줄은 내가 챙긴다', P25 수미상관)",     gap: 24 },
+  /* ── SC02(계속) · 최봉규 "속임수" 제거 지시 클리프행어 (P51~P60) / 긴장 8→10 🔴 ── */
+  { src: "panels/panel_051.png", alt: "panel 051 · 🔴 공포→표독('…속임수야', 최봉규 단독·클리프행어 빌드)",        gap: 12 },  /* 클리프행어 조임 */
+  { src: "panels/panel_052.png", alt: "panel 052 · 팀원 눈짓·제거 명분('위험한 놈이야', 살의 발동 2풍선)",         gap: 12 },
+  { src: "panels/panel_053.png", alt: "panel 053 · 표독한 눈·제거 결심('여기서 묻어야 해', 서늘)",                 gap: 12 },
+  { src: "panels/panel_054.png", alt: "panel 054 · 잔여 팀원 포위 WS(무대사·SFX·위기 전환)",                       gap: 12 },
+  { src: "panels/panel_055.png", alt: "panel 055 · 한소이 위기 감지('저 사람들, 왜…', 물음표·다급 2풍선)",         gap: 12 },
+  { src: "panels/panel_056.png", alt: "panel 056 · 최봉규 은폐 논리('…정당방위야', 위선적 여유 2풍선)",             gap: 12 },
+  { src: "panels/panel_057.png", alt: "panel 057 · 도현 미세한 균열('이 다음은, 안 봤어', DRIFT 잔향 착지)",        gap: 12 },
+  { src: "panels/panel_058.png", alt: "panel 058 · 🔴 최봉규 입 ECU('죽여. 흔적도 남기지 마', 제거 지시 발동)",     gap: 12 },
+  { src: "panels/panel_059.png", alt: "panel 059 · 팀원 일제 쇄도 WS(무대사·FX_VOID 구석 잔상·위기 정점)",          gap: 12 },
+  { src: "panels/panel_060.png", alt: "panel 060 · 🔴 도현 눈 ECU→풀블랙 암전('…예정보다, 빠르군', full-bleed·긴장 10)", gap: 200 } /* ★ full-bleed 정점 · 회차 끝 블랙컷 여운 */
+];
+
+/* ===== 렌더러 ===== */
+function el(tag, cls, txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+function renderPanel(p, i){
+  const panel = el("div", "panel");
+  if (p.gap) panel.style.marginBottom = p.gap + "px"; // 이음새(리듬)
+  const img = new Image();
+  img.loading = "lazy";              // 긴 회차 성능을 위한 지연 로드
+  img.decoding = "async";
+  img.alt = p.alt || ("panel " + String(i+1).padStart(3,"0"));
+  img.src = p.src;
+  img.onerror = () => {              // 결손/0바이트 PNG는 칸을 비우지 않고 표시
+    const ph = el("div", "missing", "⚠ 패널 이미지 누락/손상: " + p.src);
+    img.replaceWith(ph);
+  };
+  panel.appendChild(img);
+  return panel;
+}
+
+(function init(){
+  document.title = META.title + " — " + META.episode;
+  document.getElementById("m-title").textContent = META.title;
+  document.getElementById("m-ep").textContent = META.episode;
+  const strip = document.getElementById("strip");
+  PANELS.forEach((p,i) => strip.appendChild(renderPanel(p,i)));
+  document.getElementById("foot").textContent =
+    "총 " + PANELS.length + " 패널 · 「최약체의 귀환」 ep04 · 끝까지 스크롤하세요";
+})();
+</script>
+</body>
+</html>

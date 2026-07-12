@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!-- EP03 「최약체의 귀환」 세로 스크롤 웹툰 뷰어 — 말풍선·대사 in-image 베이크(오버레이 없음), 패널 57장 순서 배치 + 리듬 간격 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>최약체의 귀환 — ep03</title>
+<!--
+  세로 스크롤 웹툰 뷰어 (단일 HTML, 외부 의존성 없음)
+  - 말풍선·한글 대사는 각 패널 PNG에 이미 베이크됨(in-image) → 텍스트 오버레이 없음.
+  - PANELS 데이터 배열이 유일한 편집 지점: { src, alt, gap }.
+      gap = 이 패널 '다음'의 이음새(px). 0=무봉제 연속 컷, 클수록 장면 전환/침묵/임팩트 체류.
+  - 패널은 원본 비율(width:100%; height:auto)로 온전히 배치 → 베이크 말풍선 잘림 없음.
+  - EP01/EP02 뷰어와 동일 구조·기술 스택(단일 HTML+동봉 panels/ 상대참조 → 그대로 열림).
+-->
+<style>
+  :root {
+    --max-w: 720px;          /* 모바일 우선 기준 폭(데스크톱은 중앙 정렬) */
+    --page-bg: #0e0e10;      /* 뷰어 바깥 배경 */
+    --strip-bg: #000000;     /* 패널 스트립 배경(암전 컷과 이어지도록 검정) */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page-bg);
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    color: #111;
+    -webkit-text-size-adjust: 100%;
+  }
+  header.viewer-head {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(14,14,16,.92);
+    color: #f5f5f7; text-align: center;
+    padding: 10px 12px; font-size: 14px; letter-spacing: .02em;
+    backdrop-filter: blur(6px);
+  }
+  header.viewer-head b { font-weight: 700; }
+  .strip {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    background: var(--strip-bg);
+    display: flex; flex-direction: column;
+    gap: 0; /* 이음새는 패널별 margin-bottom(gap)으로 제어 */
+  }
+  .panel { position: relative; line-height: 0; }
+  .panel img {
+    width: 100%; height: auto; display: block;
+    background: #1c1c1e; /* 이미지 로드 전/결손 시에도 칸 형태 유지(암부 톤) */
+  }
+  .panel .missing {
+    line-height: 1.5; color: #b00020; background: #fff3f3;
+    border: 2px dashed #b00020; text-align: center;
+    padding: 48px 12px; font-size: 14px;
+  }
+  footer.viewer-foot {
+    color:#9a9aa2; text-align:center; padding:28px 12px 60px;
+    font-size:13px; max-width: var(--max-w); margin:0 auto;
+  }
+</style>
+</head>
+<body>
+<header class="viewer-head"><b id="m-title">최약체의 귀환</b> · <span id="m-ep">ep03</span></header>
+<main class="strip" id="strip" aria-label="webtoon vertical viewer"></main>
+<footer class="viewer-foot" id="foot"></footer>
+
+<script>
+/* ===== META ===== */
+const META = { title: "최약체의 귀환", episode: "ep03" };
+
+/* ===== PANELS 데이터 (episode-compositor) =====
+   src = 이 파일 기준 상대경로. bubbles 없음(말풍선은 이미지에 베이크됨).
+   gap = 다음 패널과의 이음새(px):
+     0   무봉제 연속 컷(같은 순간/동작·줌인 연속)
+     12  긴장 조이기(클리프행어 조임 연속 컷)
+     24  일반 비트 전환
+     64  침묵 박자·무드 호흡·VOID 체류·정점 체류(세로컷/인서트)
+     96  F-07 반전 정점 full-bleed 앞뒤 여백(충격 격리·시간 정지)
+     120 장면 전환(하드 SCENE BREAK)
+     200 클리프행어 암전 체류(회차 끝 · 풀블랙 여운)
+   근거: ep03_shotlist.md 하드 SCENE BREAK(P7/P13/P44 뒤, LOC 변경) · scene_id 4개(SC01~SC04)
+         · 💠 F-07 2차 노출 정점 full-bleed 단독 P31(P30/P31 앞뒤 96로 격리) · P34 기억대조 인서트·P35 세로컷 체류(64)
+         · 🔴 클리프행어 조임 P51~57(12) · P57 full-bleed→풀블랙 암전(200 하단 여운) */
+const PANELS = [
+  /* ── SC01 LOC_DOHYUN_ROOM · 콜드오픈 여파·잠입 결심 (P1~P7) / 긴장 7→5 ── */
+  { src: "panels/panel_001.png", alt: "panel 001 · EP02 여진 눈 ECU(무대사·긴장 리셋)",      gap: 64 },  /* 침묵 박자 호흡 */
+  { src: "panels/panel_002.png", alt: "panel 002 · 이마 문지름·구석 빈 구멍(FX_VOID 잔상)",   gap: 64 },  /* VOID 여진 체류 */
+  { src: "panels/panel_003.png", alt: "panel 003 · 미래 노트 마주 봄('잡을 건 잡는다')",     gap: 24 },
+  { src: "panels/panel_004.png", alt: "panel 004 · 최적 게이트 항목 짚는 손 insert",          gap: 24 },
+  { src: "panels/panel_005.png", alt: "panel 005 · 미래를 무기로 전환(T3 위장 화법)",         gap: 24 },
+  { src: "panels/panel_006.png", alt: "panel 006 · 오른관자놀이 그을림 insert(FX_BURN 소모)",  gap: 64 },  /* 소모 대가 체류 */
+  { src: "panels/panel_007.png", alt: "panel 007 · 힐러 필요 결심(2풍선, 한소이行 점화)",      gap: 120 }, /* 하드 SCENE BREAK → SC02 */
+  /* ── SC02 LOC_GREYMARKET(낮) · 힐러 주선 거래 (P8~P13) ── */
+  { src: "panels/panel_008.png", alt: "panel 008 · 낮 회색 시장 재진입 establishing(3:2, SFX)", gap: 24 },
+  { src: "panels/panel_009.png", alt: "panel 009 · 곽노인 재등장·알아봄(능글 반말체)",         gap: 24 },
+  { src: "panels/panel_010.png", alt: "panel 010 · 힐러 주선 요청 OTS(건조한 거래 개시)",      gap: 24 },
+  { src: "panels/panel_011.png", alt: "panel 011 · 곽노인 한소이 이름 던지기(2풍선)",          gap: 24 },
+  { src: "panels/panel_012.png", alt: "panel 012 · '…그 힐러' 그날의 그녀 직감(속말)",         gap: 24 },
+  { src: "panels/panel_013.png", alt: "panel 013 · 거래 마무리·자리 뜸(2풍선 화자 교대)",       gap: 120 }, /* 하드 SCENE BREAK → SC03 */
+  /* ── SC03 LOC_CLINIC(ext→int) · 재회·거래·F-07 2차 노출·냉정 vs need (P14~P44) / 긴장 5→8 ── */
+  { src: "panels/panel_014.png", alt: "panel 014 · 진료소 외경 establishing(3:2, ext, SFX)",   gap: 24 },
+  { src: "panels/panel_015.png", alt: "panel 015 · 한소이 치료 중 등장(int, 문양 흐릿)",       gap: 24 },
+  { src: "panels/panel_016.png", alt: "panel 016 · 재회 성립·도현 알아봄 OTS",                 gap: 24 },
+  { src: "panels/panel_017.png", alt: "panel 017 · 걱정 어린 온기(물음표 시그니처)",           gap: 24 },
+  { src: "panels/panel_018.png", alt: "panel 018 · 도현 무표정 냉각(온도차)",                  gap: 24 },
+  { src: "panels/panel_019.png", alt: "panel 019 · 힐러 거래 제안(2풍선)",                     gap: 24 },
+  { src: "panels/panel_020.png", alt: "panel 020 · 한소이 놀람·의문(want/need 예고)",           gap: 24 },
+  { src: "panels/panel_021.png", alt: "panel 021 · 냉정한 조건·보수 제시",                     gap: 24 },
+  { src: "panels/panel_022.png", alt: "panel 022 · 망설이는 저울",                             gap: 24 },
+  { src: "panels/panel_023.png", alt: "panel 023 · need 인격화 결심(자기소진형 이타심)",        gap: 24 },
+  { src: "panels/panel_024.png", alt: "panel 024 · 도현 want 우선 '계약이야'(감정 차단)",       gap: 24 },
+  { src: "panels/panel_025.png", alt: "panel 025 · 수락·옅은 미소(저채도 온기)",               gap: 24 },
+  { src: "panels/panel_026.png", alt: "panel 026 · 짐가방 어깨에 멤 insert(팀 성립·무대사)",     gap: 24 },
+  { src: "panels/panel_027.png", alt: "panel 027 · '…필요해서야' need 방어기제(속말)",          gap: 24 },
+  { src: "panels/panel_028.png", alt: "panel 028 · 장비 점검 손 유도(F-07 진입 브릿지)",        gap: 24 },
+  { src: "panels/panel_029.png", alt: "panel 029 · 도현 시선 손등에 멈춤(무대사·발견 직전)",     gap: 0 },   /* 손등 줌인 무봉제 */
+  { src: "panels/panel_030.png", alt: "panel 030 · 손등 클로즈인 insert(반전 진입·무대사)",      gap: 96 },  /* F-07 정점 앞 여백 격리 */
+  { src: "panels/panel_031.png", alt: "panel 031 · 💠 꺼져가는 청록 문양 full-bleed(9:16, EP01보다 흐림)", gap: 96 }, /* F-07 발동 정점 뒤 여백 격리 */
+  { src: "panels/panel_032.png", alt: "panel 032 · '…저 문양' 도현 인지(속말 점층 1)",          gap: 24 },
+  { src: "panels/panel_033.png", alt: "panel 033 · '능력이 꺼져가고 있어'(속말 점층 2)",        gap: 24 },
+  { src: "panels/panel_034.png", alt: "panel 034 · 기억 대조 insert(EP01 P31 밝기 병치·'그때보다 더')", gap: 64 }, /* F-07 핵심 이미지 체류 */
+  { src: "panels/panel_035.png", alt: "panel 035 · '이게 다 꺼지면 넌 죽어' 세로컷(2:3, 선고)",   gap: 64 }, /* 감정 정점 세로컷 체류 */
+  { src: "panels/panel_036.png", alt: "panel 036 · 태연한 한소이·소매 내림(정보 격차·밝음 대비)",  gap: 24 },
+  { src: "panels/panel_037.png", alt: "panel 037 · '…아니. 아무것도' 감춤(T3 예고)",            gap: 24 },
+  { src: "panels/panel_038.png", alt: "panel 038 · 함구의 자각(속말, 회귀자 함구)",             gap: 24 },
+  { src: "panels/panel_039.png", alt: "panel 039 · '일단 살고 봐요' need 인격화(2풍선)",         gap: 24 },
+  { src: "panels/panel_040.png", alt: "panel 040 · T4 딜레마 씨앗(속말)",                       gap: 24 },
+  { src: "panels/panel_041.png", alt: "panel 041 · '…지금은, 아니야' 정서적 냉각(속말)",         gap: 24 },
+  { src: "panels/panel_042.png", alt: "panel 042 · '…아직은' 단정형 붕괴 신호 insert(억눌린 톤)",  gap: 64 }, /* 유일 겉대사 균열 체류 */
+  { src: "panels/panel_043.png", alt: "panel 043 · 한소이 표정 살핌(정보 격차 유지)",           gap: 24 },
+  { src: "panels/panel_044.png", alt: "panel 044 · '…가자. 준비할 게 있어' 반전 착지(감정 눌림)", gap: 120 }, /* 하드 SCENE BREAK → SC04 */
+  /* ── SC04 LOC_GATE_STAGING(저녁) · 잠입 준비→최봉규 배정 확인 (P45~P57) / 긴장 6→10 🔴 충돌 예고 ── */
+  { src: "panels/panel_045.png", alt: "panel 045 · 게이트 집결지 저녁 establishing(3:2, SFX)",   gap: 24 },
+  { src: "panels/panel_046.png", alt: "panel 046 · 루트 점검 팀 준비(단정형·운용)",             gap: 24 },
+  { src: "panels/panel_047.png", alt: "panel 047 · '여기까진 계획대로야'(통제 착각 발판)",       gap: 24 },
+  { src: "panels/panel_048.png", alt: "panel 048 · '아직 맞겠지' F-04 DRIFT 잔향(속말)",         gap: 24 },
+  { src: "panels/panel_049.png", alt: "panel 049 · 팀 성립 온기 한 컷(저채도)",                 gap: 24 },
+  { src: "panels/panel_050.png", alt: "panel 050 · '같이 들어갈 팀만 확인하면 돼'(B8 예고)",      gap: 24 },
+  { src: "panels/panel_051.png", alt: "panel 051 · 배정 게시판 앞·명단 훑음(무대사·긴장)",       gap: 12 }, /* 클리프행어 조임 */
+  { src: "panels/panel_052.png", alt: "panel 052 · '…이 팀, 저 팀' 명단 대조(속말 빌드업)",      gap: 12 },
+  { src: "panels/panel_053.png", alt: "panel 053 · 한 줄에서 눈 정지 insert ECU(정적 침묵)",      gap: 12 },
+  { src: "panels/panel_054.png", alt: "panel 054 · 화면 베이크 '게이트 배정 — 공격팀장 최봉규'",  gap: 12 },
+  { src: "panels/panel_055.png", alt: "panel 055 · '…최봉규. 같은 게이트라고' 충돌 자각",         gap: 12 },
+  { src: "panels/panel_056.png", alt: "panel 056 · 최봉규 원경 실루엣(3:2, 혼동 분리·근접 금지)",  gap: 12 },
+  { src: "panels/panel_057.png", alt: "panel 057 · 🔴 '…예정에, 없던 일이야' ECU→풀블랙 암전(9:16)", gap: 200 } /* 회차 끝 · 블랙컷 여운 */
+];
+
+/* ===== 렌더러 ===== */
+function el(tag, cls, txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+function renderPanel(p, i){
+  const panel = el("div", "panel");
+  if (p.gap) panel.style.marginBottom = p.gap + "px"; // 이음새(리듬)
+  const img = new Image();
+  img.loading = "lazy";              // 긴 회차 성능을 위한 지연 로드
+  img.decoding = "async";
+  img.alt = p.alt || ("panel " + String(i+1).padStart(3,"0"));
+  img.src = p.src;
+  img.onerror = () => {              // 결손/0바이트 PNG는 칸을 비우지 않고 표시
+    const ph = el("div", "missing", "⚠ 패널 이미지 누락/손상: " + p.src);
+    img.replaceWith(ph);
+  };
+  panel.appendChild(img);
+  return panel;
+}
+
+(function init(){
+  document.title = META.title + " — " + META.episode;
+  document.getElementById("m-title").textContent = META.title;
+  document.getElementById("m-ep").textContent = META.episode;
+  const strip = document.getElementById("strip");
+  PANELS.forEach((p,i) => strip.appendChild(renderPanel(p,i)));
+  document.getElementById("foot").textContent =
+    "총 " + PANELS.length + " 패널 · 「최약체의 귀환」 ep03 · 끝까지 스크롤하세요";
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<!-- EP02 「최약체의 귀환」 세로 스크롤 웹툰 뷰어 — 말풍선·대사 in-image 베이크(오버레이 없음), 패널 57장 순서 배치 + 리듬 간격 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>최약체의 귀환 — ep02</title>
+<!--
+  세로 스크롤 웹툰 뷰어 (단일 HTML, 외부 의존성 없음)
+  - 말풍선·한글 대사는 각 패널 PNG에 이미 베이크됨(in-image) → 텍스트 오버레이 없음.
+  - PANELS 데이터 배열이 유일한 편집 지점: { src, alt, gap }.
+      gap = 이 패널 '다음'의 이음새(px). 0=무봉제 연속 컷, 클수록 장면 전환/침묵/임팩트 체류.
+  - 패널은 원본 비율(width:100%; height:auto)로 온전히 배치 → 베이크 말풍선 잘림 없음.
+  - EP01 뷰어와 동일 구조·기술 스택(단일 HTML+동봉 panels/ 상대참조 → 그대로 열림).
+-->
+<style>
+  :root {
+    --max-w: 720px;          /* 모바일 우선 기준 폭(데스크톱은 중앙 정렬) */
+    --page-bg: #0e0e10;      /* 뷰어 바깥 배경 */
+    --strip-bg: #000000;     /* 패널 스트립 배경(암전 컷과 이어지도록 검정) */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page-bg);
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    color: #111;
+    -webkit-text-size-adjust: 100%;
+  }
+  header.viewer-head {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(14,14,16,.92);
+    color: #f5f5f7; text-align: center;
+    padding: 10px 12px; font-size: 14px; letter-spacing: .02em;
+    backdrop-filter: blur(6px);
+  }
+  header.viewer-head b { font-weight: 700; }
+  .strip {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    background: var(--strip-bg);
+    display: flex; flex-direction: column;
+    gap: 0; /* 이음새는 패널별 margin-bottom(gap)으로 제어 */
+  }
+  .panel { position: relative; line-height: 0; }
+  .panel img {
+    width: 100%; height: auto; display: block;
+    background: #1c1c1e; /* 이미지 로드 전/결손 시에도 칸 형태 유지(암부 톤) */
+  }
+  .panel .missing {
+    line-height: 1.5; color: #b00020; background: #fff3f3;
+    border: 2px dashed #b00020; text-align: center;
+    padding: 48px 12px; font-size: 14px;
+  }
+  footer.viewer-foot {
+    color:#9a9aa2; text-align:center; padding:28px 12px 60px;
+    font-size:13px; max-width: var(--max-w); margin:0 auto;
+  }
+</style>
+</head>
+<body>
+<header class="viewer-head"><b id="m-title">최약체의 귀환</b> · <span id="m-ep">ep02</span></header>
+<main class="strip" id="strip" aria-label="webtoon vertical viewer"></main>
+<footer class="viewer-foot" id="foot"></footer>
+
+<script>
+/* ===== META ===== */
+const META = { title: "최약체의 귀환", episode: "ep02" };
+
+/* ===== PANELS 데이터 (episode-compositor) =====
+   src = 이 파일 기준 상대경로. bubbles 없음(말풍선은 이미지에 베이크됨).
+   gap = 다음 패널과의 이음새(px):
+     0   무봉제 연속 컷(같은 순간/동작)
+     12  긴장 조이기(클리프행어 직전 연속 컷)
+     24  일반 비트 전환
+     64  침묵 박자·무드 호흡·VOID(빈 구멍) 위화감 체류
+     96  국면 전환(BEAT SHIFT 회상 진입/이탈 · 톤 전환 여백)
+     120 장면 전환(SCENE BREAK)·임팩트 컷 격리
+     200 클리프행어 암전 체류(회차 끝 · 풀블랙 여운)
+   근거: ep02_shotlist.md 하드 SCENE BREAK(P4/P5/P12/P20/P50) · BEAT SHIFT(P30 회상 진입·P45 이탈)
+         · FX_VOID 위화감(P36/P38/P39/P40) · 반전 정점 full-bleed 격리(P42) · 클리프행어 조이기(P51~57) */
+const PANELS = [
+  /* ── SC01 LOC_GATE_INTERIOR · 콜드오픈 여파 (P1~P4) ── */
+  { src: "panels/panel_001.png", alt: "panel 001 · 예언 여진 눈 ECU('사라졌어')",   gap: 64 },  /* 상실 여운 호흡 */
+  { src: "panels/panel_002.png", alt: "panel 002 · 텅 빈 자리 POV(3:2, FX_VOID)",    gap: 64 },  /* 빈 공간 체류 */
+  { src: "panels/panel_003.png", alt: "panel 003 · 관자놀이 짚음(FX_BURN 잔재)",     gap: 24 },
+  { src: "panels/panel_004.png", alt: "panel 004 · 빈 구멍 손끝 ECU(FX_VOID)",       gap: 120 }, /* SCENE BREAK → SC02 */
+  /* ── SC02 LOC_GATE3_ENTRANCE (P5) ── */
+  { src: "panels/panel_005.png", alt: "panel 005 · 게이트 출구 걸어나옴(2:3)",       gap: 120 }, /* SCENE BREAK → SC03 */
+  /* ── SC03 LOC_BACKALLEY 심야 · 통제 상실 자각 (P6~P12) ── */
+  { src: "panels/panel_006.png", alt: "panel 006 · 심야 뒷골목 뒷모습(3:2, silent)", gap: 64 },  /* 침묵 박자 */
+  { src: "panels/panel_007.png", alt: "panel 007 · 멈춰 정면 단정형",               gap: 24 },
+  { src: "panels/panel_008.png", alt: "panel 008 · 손가락 정보 점검",               gap: 24 },
+  { src: "panels/panel_009.png", alt: "panel 009 · 공백 눈 ECU(단정형 붕괴 시작)",   gap: 64 },  /* 소모 공백 체류 */
+  { src: "panels/panel_010.png", alt: "panel 010 · 미세 통증 '큭'(FX_BURN)",         gap: 24 },
+  { src: "panels/panel_011.png", alt: "panel 011 · 벽 짚음 자기불신",               gap: 24 },
+  { src: "panels/panel_012.png", alt: "panel 012 · 곽노인行 결심('값')",            gap: 120 }, /* SCENE BREAK → SC04 */
+  /* ── SC04 LOC_GREYMARKET · 정보 거래 (P13~P20) ── */
+  { src: "panels/panel_013.png", alt: "panel 013 · 그레이마켓 재진입(3:2, SFX)",     gap: 24 },
+  { src: "panels/panel_014.png", alt: "panel 014 · 곽노인 등장·알아봄",             gap: 24 },
+  { src: "panels/panel_015.png", alt: "panel 015 · 거래 시작(2풍선 화자교대)",       gap: 24 },
+  { src: "panels/panel_016.png", alt: "panel 016 · 곽노인 우회 떠보기",             gap: 24 },
+  { src: "panels/panel_017.png", alt: "panel 017 · 직감 위장(T3)",                  gap: 24 },
+  { src: "panels/panel_018.png", alt: "panel 018 · 북구 사건 정보 심기(B8 복선)",    gap: 24 },
+  { src: "panels/panel_019.png", alt: "panel 019 · 미래 기억 대조(속말)",           gap: 24 },
+  { src: "panels/panel_020.png", alt: "panel 020 · 거래 마무리(2풍선)",             gap: 120 }, /* SCENE BREAK → SC05 */
+  /* ── SC05 LOC_DOHYUN_ROOM · 미래 노트 재정비 (P21~P30) ── */
+  { src: "panels/panel_021.png", alt: "panel 021 · 방 노트 establishing(3:2, silent)", gap: 24 },
+  { src: "panels/panel_022.png", alt: "panel 022 · 순서대로 다시 씀",               gap: 24 },
+  { src: "panels/panel_023.png", alt: "panel 023 · 복수 리스트(최봉규·빈칸 계단)",   gap: 24 },
+  { src: "panels/panel_024.png", alt: "panel 024 · 힘 운용 계획",                   gap: 24 },
+  { src: "panels/panel_025.png", alt: "panel 025 · 소모 규칙 자각",                 gap: 24 },
+  { src: "panels/panel_026.png", alt: "panel 026 · 작은 성취 안정",                 gap: 24 },
+  { src: "panels/panel_027.png", alt: "panel 027 · 첫 죽음 항목 펜 멈춤(브릿지)",    gap: 24 },
+  { src: "panels/panel_028.png", alt: "panel 028 · 왼목 흉터 부재 확인",            gap: 24 },
+  { src: "panels/panel_029.png", alt: "panel 029 · 눈 감고 복기 진입",             gap: 64 },  /* 복기 전 호흡 */
+  { src: "panels/panel_030.png", alt: "panel 030 · 탈색 회상 전환(silent)",         gap: 96 },  /* BEAT SHIFT → SC06 회상 진입(톤 전환) */
+  /* ── SC06 회상 교차(탈색↔정상색) · 과거 진상 균열 (P31~P45) ── */
+  { src: "panels/panel_031.png", alt: "panel 031 · 회상 첫 죽음 establishing(3:2, 먹먹SFX)", gap: 24 },
+  { src: "panels/panel_032.png", alt: "panel 032 · 봉규 등 돌림(회상 대사)",         gap: 24 },
+  { src: "panels/panel_033.png", alt: "panel 033 · 회상+현재 교차 재검토",          gap: 24 },
+  { src: "panels/panel_034.png", alt: "panel 034 · '그 지시대로' 통신 보고(F-03)",   gap: 64 },  /* 핵심 복선 착지 */
+  { src: "panels/panel_035.png", alt: "panel 035 · 현재 균열 자각('지시?')",        gap: 24 },
+  { src: "panels/panel_036.png", alt: "panel 036 · 통화 상대 노이즈 공백(FX_VOID)",  gap: 64 },  /* VOID 위화감 체류 */
+  { src: "panels/panel_037.png", alt: "panel 037 · 위험한 결심(T2 전조)",           gap: 24 },
+  { src: "panels/panel_038.png", alt: "panel 038 · 회상 심부 먹칠(FX_VOID)",         gap: 64 },  /* VOID 체류 */
+  { src: "panels/panel_039.png", alt: "panel 039 · 지워진 자리 모자이크(FX_VOID)",   gap: 64 },  /* VOID 위화감 */
+  { src: "panels/panel_040.png", alt: "panel 040 · 🔴 빈 구멍 들여다봄(T2 위반)",     gap: 64 },  /* 발동 beat */
+  { src: "panels/panel_041.png", alt: "panel 041 · T2 반동 외침 '크윽!'(FX_BURN 확산)", gap: 120 }, /* 환각 정점 앞 여백 격리 */
+  { src: "panels/panel_042.png", alt: "panel 042 · 🔴 환각 다른 죽음 full-bleed(9:16, silent)", gap: 120 }, /* 반전 정점 뒤 여백 격리 */
+  { src: "panels/panel_043.png", alt: "panel 043 · 현재 튕겨나옴 거친 숨",          gap: 24 },
+  { src: "panels/panel_044.png", alt: "panel 044 · 자기 기억 불신",                 gap: 24 },
+  { src: "panels/panel_045.png", alt: "panel 045 · 반전 정점 흔들리는 눈",          gap: 96 },  /* BEAT SHIFT → SC07 회상 이탈(톤 전환) */
+  /* ── SC07 LOC_DOHYUN_ROOM · 통제 회복 착각 (P46~P50) ── */
+  { src: "panels/panel_046.png", alt: "panel 046 · 통제 강박 재발동",               gap: 24 },
+  { src: "panels/panel_047.png", alt: "panel 047 · 방어기제 합리화",               gap: 24 },
+  { src: "panels/panel_048.png", alt: "panel 048 · 검증 미래로 눈 돌림(B8 발동)",    gap: 24 },
+  { src: "panels/panel_049.png", alt: "panel 049 · 창가 새벽빛(2:3, EP01 P21 변주)", gap: 24 },
+  { src: "panels/panel_050.png", alt: "panel 050 · 착각 절정 '이건, 안 바뀌어'",    gap: 120 }, /* SCENE BREAK → SC08(방→새벽 북구) */
+  /* ── SC08 LOC_BACKALLEY 새벽 북구 · 어긋난 사건 → 클리프행어 (P51~P57) ── */
+  { src: "panels/panel_051.png", alt: "panel 051 · 새벽 북구 검증 무대(3:2, silent)", gap: 12 }, /* 클리프행어 조이기 */
+  { src: "panels/panel_052.png", alt: "panel 052 · 예측 확언 '지금. 여기서.'",      gap: 12 },
+  { src: "panels/panel_053.png", alt: "panel 053 · 사건 부재(3:2, P51 대비)",        gap: 12 },
+  { src: "panels/panel_054.png", alt: "panel 054 · 불일치 자각 '…안, 일어나?'",     gap: 12 },
+  { src: "panels/panel_055.png", alt: "panel 055 · 🟣 어긋난 디테일 DRIFT 예고(ECU)", gap: 12 },
+  { src: "panels/panel_056.png", alt: "panel 056 · 삼중 공포 원인 불명",            gap: 12 },
+  { src: "panels/panel_057.png", alt: "panel 057 · 🟣 클리프행어 이중 공포→풀블랙 암전(9:16)", gap: 200 } /* 회차 끝 · 블랙컷 여운(검정 스트립 하단 체류) */
+];
+
+/* ===== 렌더러 ===== */
+function el(tag, cls, txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+
+function renderPanel(p, i){
+  const panel = el("div", "panel");
+  if (p.gap) panel.style.marginBottom = p.gap + "px"; // 이음새(리듬)
+  const img = new Image();
+  img.loading = "lazy";              // 긴 회차 성능을 위한 지연 로드
+  img.decoding = "async";
+  img.alt = p.alt || ("panel " + String(i+1).padStart(3,"0"));
+  img.src = p.src;
+  img.onerror = () => {              // 결손/0바이트 PNG는 칸을 비우지 않고 표시
+    const ph = el("div", "missing", "⚠ 패널 이미지 누락/손상: " + p.src);
+    img.replaceWith(ph);
+  };
+  panel.appendChild(img);
+  return panel;
+}
+
+(function init(){
+  document.title = META.title + " — " + META.episode;
+  document.getElementById("m-title").textContent = META.title;
+  document.getElementById("m-ep").textContent = META.episode;
+  const strip = document.getElementById("strip");
+  PANELS.forEach((p,i) => strip.appendChild(renderPanel(p,i)));
+  document.getElementById("foot").textContent =
+    "총 " + PANELS.length + " 패널 · 「최약체의 귀환」 ep02 · 끝까지 스크롤하세요";
+})();
+</script>
+</body>
+</html>
